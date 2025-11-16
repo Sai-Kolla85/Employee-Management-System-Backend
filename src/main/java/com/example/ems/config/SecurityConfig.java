@@ -41,22 +41,11 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // auth endpoints
                 .requestMatchers("/api/auth/**").permitAll()
-
-                // IMPORTANT: allow anonymous GETs to events and ticket-types
                 .requestMatchers(HttpMethod.GET, "/api/events/**").permitAll()
-
-                // Dev testing endpoints - permit in development only
                 .requestMatchers("/dev/**").permitAll()
-
-                // swagger
                 .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-
-                // organizer-only endpoints
                 .requestMatchers("/api/organizer/**").hasAnyRole("ORGANIZER", "ADMIN")
-
-                // everything else requires authentication
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
@@ -72,7 +61,9 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        cfg.setAllowedOrigins(List.of("http://localhost:30082"));
+
+        // Allow everything for development + Postman
+        cfg.setAllowedOriginPatterns(List.of("*"));  // required with credentials
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         cfg.setAllowedHeaders(List.of("*"));
         cfg.setAllowCredentials(true);
@@ -84,7 +75,9 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(
+            org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration config
+    ) throws Exception {
         return config.getAuthenticationManager();
     }
 }
